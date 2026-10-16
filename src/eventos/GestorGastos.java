@@ -25,6 +25,22 @@ public class GestorGastos {
         return total;
     }
 
+    /**
+     * Busca el gasto con el monto mas alto entre todos los registrados.
+     * Si varios gastos comparten el monto maximo, devuelve el primero que se registro,
+     * porque solo se reemplaza al candidato cuando aparece un monto estrictamente mayor.
+     * Si no hay gastos, devuelve null.
+     */
+    public Gasto obtenerMayorGasto() {
+        Gasto mayor = null;
+        for (Gasto gasto : gastos) {
+            if (mayor == null || gasto.getMonto() > mayor.getMonto()) {
+                mayor = gasto;
+            }
+        }
+        return mayor;
+    }
+
     /** Devuelve los gastos en modo de solo lectura para que nadie los altere desde fuera. */
     public List<Gasto> obtenerTodos() {
         return Collections.unmodifiableList(gastos);
