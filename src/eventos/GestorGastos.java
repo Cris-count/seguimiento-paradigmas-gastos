@@ -41,6 +41,20 @@ public class GestorGastos {
         return mayor;
     }
 
+    /**
+     * Devuelve una lista nueva con los gastos cuyo monto es estrictamente mayor
+     * que el monto minimo indicado. La lista original no se modifica.
+     */
+    public List<Gasto> filtrarPorMontoMayorA(double montoMinimo) {
+        List<Gasto> resultado = new ArrayList<>();
+        for (Gasto gasto : gastos) {
+            if (gasto.getMonto() > montoMinimo) {
+                resultado.add(gasto);
+            }
+        }
+        return resultado;
+    }
+
     /** Devuelve los gastos en modo de solo lectura para que nadie los altere desde fuera. */
     public List<Gasto> obtenerTodos() {
         return Collections.unmodifiableList(gastos);

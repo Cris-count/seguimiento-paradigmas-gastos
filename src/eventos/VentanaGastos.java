@@ -25,8 +25,8 @@ import javax.swing.table.DefaultTableModel;
  * Los componentes se declaran como atributos de la clase para que los
  * metodos controladores de cada evento puedan leer los campos y actualizar
  * la tabla y el resultado. Por ahora tienen evento los botones "Registrar gasto",
- * "Mostrar todos", "Calcular total" y "Mayor gasto"; los demas se conectaran en
- * las siguientes etapas.
+ * "Mostrar todos", "Calcular total", "Mayor gasto" y "Filtrar por monto"; el de
+ * busqueda se conectara en la siguiente etapa.
  */
 public class VentanaGastos extends JFrame {
 
@@ -93,6 +93,7 @@ public class VentanaGastos extends JFrame {
         btnMostrarTodos.addActionListener(evento -> mostrarTodos());
         btnCalcularTotal.addActionListener(evento -> calcularTotal());
         btnMayorGasto.addActionListener(evento -> mostrarMayorGasto());
+        btnFiltrar.addActionListener(evento -> filtrarPorMonto());
     }
 
     /**
@@ -178,6 +179,55 @@ public class VentanaGastos extends JFrame {
         lblResultado.setText("Mayor gasto: " + mayor.getConcepto()
                 + " | Categoría: " + mayor.getCategoria()
                 + " | Monto: $" + FORMATO_MONTO.format(mayor.getMonto()) + ".");
+    }
+
+    /**
+     * Controlador del evento "Filtrar por monto": valida el monto minimo escrito,
+     * pide al gestor los gastos que lo superan y muestra solo esos en la tabla.
+     */
+    private void filtrarPorMonto() {
+        String textoMinimo = txtMontoMinimo.getText().trim();
+        if (textoMinimo.isEmpty()) {
+            mostrarError("Escriba el monto mínimo para filtrar.", txtMontoMinimo);
+            return;
+        }
+
+        double montoMinimo;
+        try {
+            montoMinimo = Double.parseDouble(textoMinimo);
+        } catch (NumberFormatException e) {
+            mostrarError("El monto mínimo debe ser un número, por ejemplo 20000.", txtMontoMinimo);
+            return;
+        }
+        // "NaN" e "Infinity" se leen como numeros en Java, pero no son montos validos.
+        if (!Double.isFinite(montoMinimo)) {
+            mostrarError("El monto mínimo debe ser un número, por ejemplo 20000.", txtMontoMinimo);
+            return;
+        }
+        // Se acepta 0 (muestra todos los gastos); solo se rechazan los negativos.
+        if (montoMinimo < 0) {
+            mostrarError("El monto mínimo no puede ser negativo.", txtMontoMinimo);
+            return;
+        }
+
+        if (gestor.obtenerTodos().isEmpty()) {
+            mostrarGastos(gestor.obtenerTodos());
+            lblResultado.setText("No hay gastos registrados para filtrar.");
+            return;
+        }
+
+        List<Gasto> filtrados = gestor.filtrarPorMontoMayorA(montoMinimo);
+        mostrarGastos(filtrados);
+
+        String limite = "$" + FORMATO_MONTO.format(montoMinimo);
+        if (filtrados.isEmpty()) {
+            lblResultado.setText("Ningún gasto supera " + limite + ".");
+        } else if (filtrados.size() == 1) {
+            lblResultado.setText("1 gasto supera " + limite + ". Use \"Mostrar todos\" para ver la lista completa.");
+        } else {
+            lblResultado.setText(filtrados.size() + " gastos superan " + limite
+                    + ". Use \"Mostrar todos\" para ver la lista completa.");
+        }
     }
 
     /** Vuelve a llenar la tabla con la lista recibida; primero la vacia para no duplicar filas. */
