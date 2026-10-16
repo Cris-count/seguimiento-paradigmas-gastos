@@ -2,9 +2,11 @@ package eventos;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
-import java.text.NumberFormat;
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -39,9 +41,14 @@ public class VentanaGastos extends JFrame {
 
     private static final String[] COLUMNAS = {"N.°", "Concepto", "Categoría", "Monto"};
 
-    // Muestra los montos con separador de miles colombiano, por ejemplo 20.000.
-    private static final NumberFormat FORMATO_MONTO =
-            NumberFormat.getNumberInstance(Locale.forLanguageTag("es-CO"));
+    // Regla unica para escribir montos: solo digitos, sin separadores de miles, y como
+    // maximo dos decimales separados por punto o coma (20000, 3500.50 o 3500,50).
+    // Asi "20.000" se rechaza en lugar de leerse como veinte pesos.
+    private static final Pattern PATRON_MONTO = Pattern.compile("\\d{1,12}([.,]\\d{1,2})?");
+
+    private static final String MENSAJE_FORMATO_MONTO =
+            "Monto no válido. Escriba solo números, sin puntos de miles; para decimales use "
+            + "punto o coma con máximo dos cifras. Ejemplos: 20000, 3500.50";
 
     // Almacen de los gastos; la ventana solo lo usa, no guarda los datos por su cuenta.
     private final GestorGastos gestor = new GestorGastos();
@@ -55,7 +62,7 @@ public class VentanaGastos extends JFrame {
     private final JTextField txtMontoMinimo = new JTextField(10);
     private final JTextField txtBusqueda = new JTextField(15);
 
-    // Botones: cada uno producira un evento distinto en las siguientes etapas.
+    // Botones: cada uno es la fuente de un evento distinto.
     private final JButton btnRegistrar = new JButton("Registrar gasto");
     private final JButton btnMostrarTodos = new JButton("Mostrar todos");
     private final JButton btnCalcularTotal = new JButton("Calcular total");
@@ -114,14 +121,16 @@ public class VentanaGastos extends JFrame {
             return;
         }
 
-        double monto;
-        try {
-            monto = Double.parseDouble(textoMonto);
-        } catch (NumberFormatException e) {
-            mostrarError("El monto debe ser un número, por ejemplo 20000.", txtMonto);
+        if (textoMonto.startsWith("-")) {
+            mostrarError("El monto debe ser mayor que cero.", txtMonto);
             return;
         }
-        if (!Double.isFinite(monto) || monto <= 0) {
+        Double monto = interpretarMonto(textoMonto);
+        if (monto == null) {
+            mostrarError(MENSAJE_FORMATO_MONTO, txtMonto);
+            return;
+        }
+        if (monto <= 0) {
             mostrarError("El monto debe ser mayor que cero.", txtMonto);
             return;
         }
@@ -132,7 +141,7 @@ public class VentanaGastos extends JFrame {
 
         gestor.registrar(new Gasto(concepto, monto, categoria));
         mostrarGastos(gestor.obtenerTodos());
-        lblResultado.setText("Gasto registrado: " + concepto + " por $" + FORMATO_MONTO.format(monto) + ".");
+        lblResultado.setText("Gasto registrado: " + concepto + " por " + formatearMonto(monto) + ".");
         limpiarFormulario();
     }
 
@@ -163,7 +172,7 @@ public class VentanaGastos extends JFrame {
             return;
         }
         double total = gestor.calcularTotal();
-        lblResultado.setText("Gasto total acumulado: $" + FORMATO_MONTO.format(total) + ".");
+        lblResultado.setText("Gasto total acumulado: " + formatearMonto(total) + ".");
     }
 
     /**
@@ -178,7 +187,7 @@ public class VentanaGastos extends JFrame {
         }
         lblResultado.setText("Mayor gasto: " + mayor.getConcepto()
                 + " | Categoría: " + mayor.getCategoria()
-                + " | Monto: $" + FORMATO_MONTO.format(mayor.getMonto()) + ".");
+                + " | Monto: " + formatearMonto(mayor.getMonto()) + ".");
     }
 
     /**
@@ -192,21 +201,14 @@ public class VentanaGastos extends JFrame {
             return;
         }
 
-        double montoMinimo;
-        try {
-            montoMinimo = Double.parseDouble(textoMinimo);
-        } catch (NumberFormatException e) {
-            mostrarError("El monto mínimo debe ser un número, por ejemplo 20000.", txtMontoMinimo);
-            return;
-        }
-        // "NaN" e "Infinity" se leen como numeros en Java, pero no son montos validos.
-        if (!Double.isFinite(montoMinimo)) {
-            mostrarError("El monto mínimo debe ser un número, por ejemplo 20000.", txtMontoMinimo);
-            return;
-        }
-        // Se acepta 0 (muestra todos los gastos); solo se rechazan los negativos.
-        if (montoMinimo < 0) {
+        if (textoMinimo.startsWith("-")) {
             mostrarError("El monto mínimo no puede ser negativo.", txtMontoMinimo);
+            return;
+        }
+        // Se acepta 0 (muestra todos los gastos); la regla de formato es la misma del registro.
+        Double montoMinimo = interpretarMonto(textoMinimo);
+        if (montoMinimo == null) {
+            mostrarError(MENSAJE_FORMATO_MONTO, txtMontoMinimo);
             return;
         }
 
@@ -219,7 +221,7 @@ public class VentanaGastos extends JFrame {
         List<Gasto> filtrados = gestor.filtrarPorMontoMayorA(montoMinimo);
         mostrarGastos(filtrados);
 
-        String limite = "$" + FORMATO_MONTO.format(montoMinimo);
+        String limite = formatearMonto(montoMinimo);
         if (filtrados.isEmpty()) {
             lblResultado.setText("Ningún gasto supera " + limite + ".");
         } else if (filtrados.size() == 1) {
@@ -271,7 +273,7 @@ public class VentanaGastos extends JFrame {
                 numero,
                 gasto.getConcepto(),
                 gasto.getCategoria(),
-                "$" + FORMATO_MONTO.format(gasto.getMonto())
+                formatearMonto(gasto.getMonto())
             });
             numero++;
         }
@@ -282,6 +284,36 @@ public class VentanaGastos extends JFrame {
         txtMonto.setText("");
         cmbCategoria.setSelectedIndex(0);
         txtConcepto.requestFocusInWindow();
+    }
+
+    /**
+     * Convierte el texto en un monto si cumple PATRON_MONTO.
+     * Devuelve null cuando el formato no es valido (letras, puntos de miles, signos, etc.).
+     */
+    private static Double interpretarMonto(String texto) {
+        if (!PATRON_MONTO.matcher(texto).matches()) {
+            return null;
+        }
+        return Double.parseDouble(texto.replace(',', '.'));
+    }
+
+    /**
+     * Presenta un monto en pesos colombianos: punto de miles y coma decimal.
+     * Los valores enteros se muestran sin decimales ($20.000) y los demas con dos ($3.500,50).
+     */
+    private static String formatearMonto(double monto) {
+        DecimalFormatSymbols simbolos = new DecimalFormatSymbols(Locale.ROOT);
+        simbolos.setGroupingSeparator('.');
+        simbolos.setDecimalSeparator(',');
+
+        double redondeado = Math.round(monto * 100) / 100.0;
+        String patron;
+        if (redondeado == Math.rint(redondeado)) {
+            patron = "#,##0";
+        } else {
+            patron = "#,##0.00";
+        }
+        return "$" + new DecimalFormat(patron, simbolos).format(redondeado);
     }
 
     /** Avisa al usuario que un dato no es valido y lleva el cursor al campo que debe corregir. */

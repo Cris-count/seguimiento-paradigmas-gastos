@@ -1,0 +1,14 @@
+# Compilados de Java
+*.class
+out/
+bin/
+build/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# Editores y sistema operativo
+.vscode/
+.DS_Store
+Thumbs.db
