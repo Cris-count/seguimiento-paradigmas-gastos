@@ -24,9 +24,8 @@ import javax.swing.table.DefaultTableModel;
  *
  * Los componentes se declaran como atributos de la clase para que los
  * metodos controladores de cada evento puedan leer los campos y actualizar
- * la tabla y el resultado. Por ahora tienen evento los botones "Registrar gasto",
- * "Mostrar todos", "Calcular total", "Mayor gasto" y "Filtrar por monto"; el de
- * busqueda se conectara en la siguiente etapa.
+ * la tabla y el resultado. Cada boton tiene su propio listener y su propio
+ * metodo controlador, conectados en registrarEventos().
  */
 public class VentanaGastos extends JFrame {
 
@@ -94,6 +93,7 @@ public class VentanaGastos extends JFrame {
         btnCalcularTotal.addActionListener(evento -> calcularTotal());
         btnMayorGasto.addActionListener(evento -> mostrarMayorGasto());
         btnFiltrar.addActionListener(evento -> filtrarPorMonto());
+        btnBuscar.addActionListener(evento -> buscarPorConcepto());
     }
 
     /**
@@ -226,6 +226,38 @@ public class VentanaGastos extends JFrame {
             lblResultado.setText("1 gasto supera " + limite + ". Use \"Mostrar todos\" para ver la lista completa.");
         } else {
             lblResultado.setText(filtrados.size() + " gastos superan " + limite
+                    + ". Use \"Mostrar todos\" para ver la lista completa.");
+        }
+    }
+
+    /**
+     * Controlador del evento "Buscar concepto": valida el texto escrito, pide al
+     * gestor los gastos cuyo concepto lo contiene y muestra solo esos en la tabla.
+     */
+    private void buscarPorConcepto() {
+        String texto = txtBusqueda.getText().trim();
+        if (texto.isEmpty()) {
+            mostrarError("Escriba una palabra o parte del concepto para buscar.", txtBusqueda);
+            return;
+        }
+
+        if (gestor.obtenerTodos().isEmpty()) {
+            mostrarGastos(gestor.obtenerTodos());
+            lblResultado.setText("No hay gastos registrados para buscar.");
+            return;
+        }
+
+        List<Gasto> encontrados = gestor.buscarPorConcepto(texto);
+        mostrarGastos(encontrados);
+
+        String buscado = "\"" + texto + "\"";
+        if (encontrados.isEmpty()) {
+            lblResultado.setText("Ningún gasto contiene " + buscado + " en su concepto.");
+        } else if (encontrados.size() == 1) {
+            lblResultado.setText("1 gasto contiene " + buscado
+                    + ". Use \"Mostrar todos\" para ver la lista completa.");
+        } else {
+            lblResultado.setText(encontrados.size() + " gastos contienen " + buscado
                     + ". Use \"Mostrar todos\" para ver la lista completa.");
         }
     }

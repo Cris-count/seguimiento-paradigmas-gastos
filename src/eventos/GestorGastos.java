@@ -3,6 +3,7 @@ package eventos;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Guarda los gastos en memoria mientras la aplicacion esta abierta.
@@ -49,6 +50,21 @@ public class GestorGastos {
         List<Gasto> resultado = new ArrayList<>();
         for (Gasto gasto : gastos) {
             if (gasto.getMonto() > montoMinimo) {
+                resultado.add(gasto);
+            }
+        }
+        return resultado;
+    }
+
+    /**
+     * Devuelve una lista nueva con los gastos cuyo concepto contiene el texto buscado,
+     * sin distinguir mayusculas de minusculas. La lista original no se modifica.
+     */
+    public List<Gasto> buscarPorConcepto(String texto) {
+        String buscado = texto.toLowerCase(Locale.ROOT);
+        List<Gasto> resultado = new ArrayList<>();
+        for (Gasto gasto : gastos) {
+            if (gasto.getConcepto().toLowerCase(Locale.ROOT).contains(buscado)) {
                 resultado.add(gasto);
             }
         }
