@@ -16,6 +16,15 @@ public class GestorGastos {
         gastos.add(gasto);
     }
 
+    /** Suma los montos de todos los gastos registrados. Si no hay gastos, devuelve 0. */
+    public double calcularTotal() {
+        double total = 0;
+        for (Gasto gasto : gastos) {
+            total += gasto.getMonto();
+        }
+        return total;
+    }
+
     /** Devuelve los gastos en modo de solo lectura para que nadie los altere desde fuera. */
     public List<Gasto> obtenerTodos() {
         return Collections.unmodifiableList(gastos);
