@@ -24,8 +24,8 @@ import javax.swing.table.DefaultTableModel;
  *
  * Los componentes se declaran como atributos de la clase para que los
  * metodos controladores de cada evento puedan leer los campos y actualizar
- * la tabla y el resultado. Por ahora solo el boton "Registrar gasto" tiene
- * un evento asociado; los demas se conectaran en las siguientes etapas.
+ * la tabla y el resultado. Por ahora tienen evento los botones "Registrar gasto"
+ * y "Mostrar todos"; los demas se conectaran en las siguientes etapas.
  */
 public class VentanaGastos extends JFrame {
 
@@ -89,6 +89,7 @@ public class VentanaGastos extends JFrame {
      */
     private void registrarEventos() {
         btnRegistrar.addActionListener(evento -> registrarGasto());
+        btnMostrarTodos.addActionListener(evento -> mostrarTodos());
     }
 
     /**
@@ -131,7 +132,24 @@ public class VentanaGastos extends JFrame {
         limpiarFormulario();
     }
 
-    /** Vuelve a llenar la tabla con la lista recibida. */
+    /**
+     * Controlador del evento "Mostrar todos": vuelve a presentar en la tabla
+     * todos los gastos guardados e informa cuantos hay.
+     */
+    private void mostrarTodos() {
+        List<Gasto> todos = gestor.obtenerTodos();
+        mostrarGastos(todos);
+
+        if (todos.isEmpty()) {
+            lblResultado.setText("No hay gastos registrados.");
+        } else if (todos.size() == 1) {
+            lblResultado.setText("Se muestra 1 gasto registrado.");
+        } else {
+            lblResultado.setText("Se muestran " + todos.size() + " gastos registrados.");
+        }
+    }
+
+    /** Vuelve a llenar la tabla con la lista recibida; primero la vacia para no duplicar filas. */
     private void mostrarGastos(List<Gasto> lista) {
         modeloTabla.setRowCount(0);
         int numero = 1;
