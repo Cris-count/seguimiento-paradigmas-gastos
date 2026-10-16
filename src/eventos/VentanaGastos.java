@@ -2,11 +2,16 @@ package eventos;
 
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
+import java.text.NumberFormat;
+import java.util.List;
+import java.util.Locale;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -17,10 +22,10 @@ import javax.swing.table.DefaultTableModel;
 /**
  * Ventana principal de la aplicacion.
  *
- * Los componentes se declaran como atributos de la clase para que, en las
- * siguientes etapas, los listeners de cada boton puedan leer los campos y
- * actualizar la tabla y el resultado. En esta etapa ningun boton tiene
- * todavia un evento asociado.
+ * Los componentes se declaran como atributos de la clase para que los
+ * metodos controladores de cada evento puedan leer los campos y actualizar
+ * la tabla y el resultado. Por ahora solo el boton "Registrar gasto" tiene
+ * un evento asociado; los demas se conectaran en las siguientes etapas.
  */
 public class VentanaGastos extends JFrame {
 
@@ -33,6 +38,13 @@ public class VentanaGastos extends JFrame {
     };
 
     private static final String[] COLUMNAS = {"N.°", "Concepto", "Categoría", "Monto"};
+
+    // Muestra los montos con separador de miles colombiano, por ejemplo 20.000.
+    private static final NumberFormat FORMATO_MONTO =
+            NumberFormat.getNumberInstance(Locale.forLanguageTag("es-CO"));
+
+    // Almacen de los gastos; la ventana solo lo usa, no guarda los datos por su cuenta.
+    private final GestorGastos gestor = new GestorGastos();
 
     // Entrada de datos del gasto (funcionalidad 1).
     private final JTextField txtConcepto = new JTextField(20);
@@ -68,6 +80,83 @@ public class VentanaGastos extends JFrame {
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         construirInterfaz();
+        registrarEventos();
+    }
+
+    /**
+     * Conecta cada boton con el metodo que responde a su evento.
+     * La lambda es el callback: Swing la ejecuta cuando el usuario hace clic.
+     */
+    private void registrarEventos() {
+        btnRegistrar.addActionListener(evento -> registrarGasto());
+    }
+
+    /**
+     * Controlador del evento "Registrar gasto": lee los campos, valida los datos,
+     * guarda el gasto y actualiza la interfaz.
+     */
+    private void registrarGasto() {
+        String concepto = txtConcepto.getText().trim();
+        String textoMonto = txtMonto.getText().trim();
+        String categoria = (String) cmbCategoria.getSelectedItem();
+
+        if (concepto.isEmpty()) {
+            mostrarError("Escriba el concepto del gasto.", txtConcepto);
+            return;
+        }
+        if (textoMonto.isEmpty()) {
+            mostrarError("Escriba el monto del gasto.", txtMonto);
+            return;
+        }
+
+        double monto;
+        try {
+            monto = Double.parseDouble(textoMonto);
+        } catch (NumberFormatException e) {
+            mostrarError("El monto debe ser un número, por ejemplo 20000.", txtMonto);
+            return;
+        }
+        if (!Double.isFinite(monto) || monto <= 0) {
+            mostrarError("El monto debe ser mayor que cero.", txtMonto);
+            return;
+        }
+        if (SIN_CATEGORIA.equals(categoria)) {
+            mostrarError("Seleccione una categoría.", cmbCategoria);
+            return;
+        }
+
+        gestor.registrar(new Gasto(concepto, monto, categoria));
+        mostrarGastos(gestor.obtenerTodos());
+        lblResultado.setText("Gasto registrado: " + concepto + " por $" + FORMATO_MONTO.format(monto) + ".");
+        limpiarFormulario();
+    }
+
+    /** Vuelve a llenar la tabla con la lista recibida. */
+    private void mostrarGastos(List<Gasto> lista) {
+        modeloTabla.setRowCount(0);
+        int numero = 1;
+        for (Gasto gasto : lista) {
+            modeloTabla.addRow(new Object[] {
+                numero,
+                gasto.getConcepto(),
+                gasto.getCategoria(),
+                "$" + FORMATO_MONTO.format(gasto.getMonto())
+            });
+            numero++;
+        }
+    }
+
+    private void limpiarFormulario() {
+        txtConcepto.setText("");
+        txtMonto.setText("");
+        cmbCategoria.setSelectedIndex(0);
+        txtConcepto.requestFocusInWindow();
+    }
+
+    /** Avisa al usuario que un dato no es valido y lleva el cursor al campo que debe corregir. */
+    private void mostrarError(String mensaje, JComponent campo) {
+        JOptionPane.showMessageDialog(this, mensaje, "Dato no válido", JOptionPane.WARNING_MESSAGE);
+        campo.requestFocusInWindow();
     }
 
     /** Organiza la ventana en tres zonas: formularios arriba, tabla al centro y resultado abajo. */
