@@ -21,10 +21,10 @@ En la programación orientada a eventos, el orden en que se ejecuta el código l
 | Controladores | `registrarGasto()`, `mostrarTodos()`, `calcularTotal()`, `mostrarMayorGasto()`, `filtrarPorMonto()` y `buscarPorConcepto()` |
 | Hilo de eventos | `SwingUtilities.invokeLater` en `AppGastos` crea la ventana en el hilo de eventos de Swing |
 | Respuesta visual | La tabla de gastos, el panel **Resultado** y los avisos de validación |
-
 ```java
 private void registrarEventos() {
     btnRegistrar.addActionListener(evento -> registrarGasto());
+prueba cu 008
     btnMostrarTodos.addActionListener(evento -> mostrarTodos());
     btnCalcularTotal.addActionListener(evento -> calcularTotal());
     btnMayorGasto.addActionListener(evento -> mostrarMayorGasto());
@@ -139,3 +139,4 @@ Durante el desarrollo, cada funcionalidad se probó manualmente en Windows antes
 - Gómez Forero, D. T., Gómez Prada, U. E. y Viola Villamizar, J. B. (2018). *Fundamentos de programación*. Universidad Pontificia Bolivariana. http://hdl.handle.net/20.500.11912/4143
 - Gómez Jiménez, E. y Aguilera Jinesta, R. G. (2022). *Metodología de la programación: conceptos, lógica e implementación* (1.ª ed.). Alpha Editorial.
 - Oracle. (s. f.). *Lesson: Writing Event Listeners*. The Java Tutorials. https://docs.oracle.com/javase/tutorial/uiswing/events/index.html
+
