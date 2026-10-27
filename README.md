@@ -133,7 +133,7 @@ Durante el desarrollo, cada funcionalidad se probó manualmente en Windows antes
 | `1589ca4` | Evento Mayor gasto |
 | `ece753f` | Evento Filtrar por monto |
 | `d86d926` | Evento Buscar concepto |
-
+j
 ### Referencias
 
 - Gómez Forero, D. T., Gómez Prada, U. E. y Viola Villamizar, J. B. (2018). *Fundamentos de programación*. Universidad Pontificia Bolivariana. http://hdl.handle.net/20.500.11912/4143
